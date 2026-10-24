@@ -194,7 +194,7 @@ private enum class Tab { HOME, STUDIO, LIBRARY, SETTINGS }
                     Text(BuildConfig.VERSION_NAME.removeSuffix(".0"),fontSize=12.sp,color=Muted)
                 }
                 when(tab) {
-                    Tab.HOME -> HomeScreen(homeScene,active,homeDraft,settings.fps,settings.gyroEnabled,
+                    Tab.HOME -> HomeScreen(homeScene,active,homeDraft,settings.fps,settings.gyroEnabled,settings.quality,
                         onScene={homeScene=it;homeDraft=null},
                         onRemix={homeDraft=SceneLooks.shuffle(previewHomeConfig)},
                         onSurprise={
@@ -218,7 +218,7 @@ private enum class Tab { HOME, STUDIO, LIBRARY, SETTINGS }
                             }
                         },
                         onExport={export(it)})
-                    Tab.STUDIO -> StudioScreen(editing,editName,settings.fps,settings.gyroEnabled,
+                    Tab.STUDIO -> StudioScreen(editing,editName,settings.fps,settings.gyroEnabled,settings.quality,
                         canUndo=history.canUndo,canRedo=history.canRedo,
                         onUndo={
                             val next=history.undo()
@@ -242,6 +242,7 @@ private enum class Tab { HOME, STUDIO, LIBRARY, SETTINGS }
                         onDuplicate={vm.duplicate(it)},onDelete={vm.delete(it)},
                         favoriteIds=settings.favoriteIds,onToggleFavorite={vm.toggleFavorite(it)})
                     Tab.SETTINGS -> SettingsScreen(settings.fps,settings.gyroEnabled,vm::setFps,vm::setGyro,
+                        quality=settings.quality,onQuality=vm::setQuality,
                         presetCount=presets.size,
                         onExportPresets={
                             if(presets.isEmpty()) vm.notify("Пока нет пресетов для экспорта")
@@ -261,7 +262,7 @@ private enum class Tab { HOME, STUDIO, LIBRARY, SETTINGS }
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable private fun HomeScreen(
-    scene:String, active:NoxPreset?, draft:SceneConfig?, fps:Int, gyro:Boolean,
+    scene:String, active:NoxPreset?, draft:SceneConfig?, fps:Int, gyro:Boolean, quality:Int,
     onScene:(String)->Unit, onRemix:()->Unit, onSurprise:()->Unit, onLook:(SceneLook)->Unit,
     onVariant:(NamedScenePreset)->Unit,
     onEdit:(SceneConfig)->Unit, onApply:()->Unit, onExport:(SceneConfig)->Unit
@@ -297,7 +298,7 @@ private enum class Tab { HOME, STUDIO, LIBRARY, SETTINGS }
         }
         Box(Modifier.fillMaxWidth().weight(1f).clip(RoundedCornerShape(24.dp))
             .background(Ink).border(1.dp,Color(0xFF223C4C),RoundedCornerShape(24.dp))) {
-            LivePreview(config,fps,gyro,Modifier.fillMaxSize())
+            LivePreview(config,fps,gyro,quality,Modifier.fillMaxSize())
             Box(Modifier.fillMaxSize().background(Brush.verticalGradient(
                 0f to Color.Black.copy(alpha=.14f),
                 0.52f to Color.Transparent,
@@ -477,7 +478,7 @@ private enum class Tab { HOME, STUDIO, LIBRARY, SETTINGS }
 }
 
 @Composable private fun StudioScreen(
-    config:SceneConfig, name:String, fps:Int, gyro:Boolean,
+    config:SceneConfig, name:String, fps:Int, gyro:Boolean, quality:Int,
     canUndo:Boolean, canRedo:Boolean,
     onUndo:()->Unit, onRedo:()->Unit,
     onEdit:(SceneConfig)->Unit,
@@ -507,7 +508,7 @@ private enum class Tab { HOME, STUDIO, LIBRARY, SETTINGS }
         Spacer(Modifier.height(13.dp))
         Box(Modifier.fillMaxWidth().height(previewHeight).clip(RoundedCornerShape(22.dp))
             .border(1.dp,Color(0xFF233748),RoundedCornerShape(22.dp))) {
-            if(!immersive) LivePreview(displayConfig,fps,gyro,Modifier.fillMaxSize())
+            if(!immersive) LivePreview(displayConfig,fps,gyro,quality,Modifier.fillMaxSize())
             Row(Modifier.align(Alignment.TopStart).padding(16.dp),verticalAlignment=Alignment.CenterVertically) {
                 Box(Modifier.size(6.dp).background(Cyan,CircleShape))
                 Spacer(Modifier.width(8.dp))
@@ -657,7 +658,7 @@ private enum class Tab { HOME, STUDIO, LIBRARY, SETTINGS }
         )
         }
     }
-    if(immersive) FullscreenPreview(config,fps,gyro,onClose={immersive=false})
+    if(immersive) FullscreenPreview(config,fps,gyro,quality,onClose={immersive=false})
 }
 
 
@@ -688,10 +689,10 @@ private enum class Tab { HOME, STUDIO, LIBRARY, SETTINGS }
     }
 }
 
-@Composable private fun FullscreenPreview(config:SceneConfig,fps:Int,gyro:Boolean,onClose:()->Unit) {
+@Composable private fun FullscreenPreview(config:SceneConfig,fps:Int,gyro:Boolean,quality:Int,onClose:()->Unit) {
     Dialog(onDismissRequest=onClose,properties=DialogProperties(usePlatformDefaultWidth=false)) {
         Box(Modifier.fillMaxSize().background(Ink)) {
-            LivePreview(config,fps,gyro,Modifier.fillMaxSize())
+            LivePreview(config,fps,gyro,quality,Modifier.fillMaxSize())
             Box(Modifier.fillMaxWidth().height(135.dp).align(Alignment.BottomCenter)
                 .background(Brush.verticalGradient(listOf(Color.Transparent,Ink))))
             Row(Modifier.fillMaxWidth().align(Alignment.TopCenter).padding(24.dp),
@@ -1147,7 +1148,7 @@ private enum class Tab { HOME, STUDIO, LIBRARY, SETTINGS }
     }
 }
 
-@Composable private fun SettingsScreen(fps:Int,gyro:Boolean,onFps:(Int)->Unit,onGyro:(Boolean)->Unit, presetCount:Int, onExportPresets:()->Unit,onImportPresets:()->Unit) {
+@Composable private fun SettingsScreen(fps:Int,gyro:Boolean,onFps:(Int)->Unit,onGyro:(Boolean)->Unit, quality:Int,onQuality:(Int)->Unit,presetCount:Int, onExportPresets:()->Unit,onImportPresets:()->Unit) {
     Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState())
         .padding(horizontal=20.dp)) {
         Text("Устройство и свет",fontSize=27.sp,fontWeight=FontWeight.SemiBold,color=TextWhite)
@@ -1191,6 +1192,38 @@ private enum class Tab { HOME, STUDIO, LIBRARY, SETTINGS }
         Spacer(Modifier.height(12.dp))
         Text("При нагреве и экономии энергии система может снижать фактический FPS.",
             color=Muted,fontSize=12.sp)
+        Spacer(Modifier.height(21.dp))
+        Text("Графическая насыщенность",color=TextWhite,fontSize=15.sp,
+            fontWeight=FontWeight.SemiBold)
+        Spacer(Modifier.height(4.dp))
+        Text("Детализация и глубина световых эффектов",color=Muted,fontSize=12.sp)
+        Spacer(Modifier.height(12.dp))
+        Row(Modifier.fillMaxWidth(),horizontalArrangement=Arrangement.spacedBy(8.dp)) {
+            listOf(Triple(0,"Balanced","Экономно"),
+                   Triple(1,"Rich","Глубокий свет"),
+                   Triple(2,"Ultra","Макс. эффект")).forEach { (tier,label,detail) ->
+                val chosen=quality==tier
+                Column(Modifier.weight(1f).height(88.dp)
+                    .clip(RoundedCornerShape(14.dp))
+                    .background(if(chosen) Color(0xFF123443) else Color(0xFF101923))
+                    .border(1.dp,if(chosen) Cyan.copy(alpha=.78f)
+                             else Color(0xFF243747),RoundedCornerShape(14.dp))
+                    .clickable{onQuality(tier)},
+                    horizontalAlignment=Alignment.CenterHorizontally,
+                    verticalArrangement=Arrangement.Center) {
+                    Text(label,color=if(chosen) Cyan else TextWhite,
+                        fontSize=13.sp,fontWeight=FontWeight.SemiBold,maxLines=1)
+                    Spacer(Modifier.height(5.dp))
+                    Text(detail,color=Muted,fontSize=10.sp,maxLines=1)
+                    Spacer(Modifier.height(4.dp))
+                    Box(Modifier.size(4.dp).background(
+                        if(chosen) Cyan else Color(0xFF405060),CircleShape))
+                }
+            }
+        }
+        Spacer(Modifier.height(9.dp))
+        Text("При нагреве и энергосбережении графика временно переходит в Balanced.",
+            color=Muted,fontSize=11.sp)
 
         Spacer(Modifier.height(27.dp))
         HorizontalDivider(color=Color(0xFF253541))
@@ -1305,7 +1338,7 @@ private enum class Tab { HOME, STUDIO, LIBRARY, SETTINGS }
     }
 }
 
-@Composable private fun LivePreview(config:SceneConfig,fps:Int,gyro:Boolean,modifier:Modifier=Modifier) {
+@Composable private fun LivePreview(config:SceneConfig,fps:Int,gyro:Boolean,quality:Int,modifier:Modifier=Modifier) {
     val context=LocalContext.current
     val view=remember(context){NoxSurfaceView(context)}
     var err by remember {mutableStateOf<String?>(null)}
@@ -1317,7 +1350,7 @@ private enum class Tab { HOME, STUDIO, LIBRARY, SETTINGS }
         onPauseOrDispose {sensor.stop();view.pauseRender()}
     }
     Box(modifier.background(Ink)) {
-        AndroidView(factory={view},update={it.configure(config,fps)},modifier=Modifier.fillMaxSize())
+        AndroidView(factory={view},update={it.configure(config,fps,quality)},modifier=Modifier.fillMaxSize())
         if(err!=null) Text("OpenGL: $err",color=Color.Red,modifier=Modifier.align(Alignment.Center).padding(12.dp))
     }
 }

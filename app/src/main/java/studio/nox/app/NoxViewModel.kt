@@ -57,6 +57,7 @@ class NoxViewModel(application: Application): AndroidViewModel(application) {
             message="Импортировано пресетов: ${items.size}"
         }.onFailure { message=it.message?:"Не удалось импортировать пресеты" }
     }
+    fun setQuality(value:Int)=viewModelScope.launch {settingsRepo.setQuality(value)}
     fun setFps(value:Int)=viewModelScope.launch {settingsRepo.setFps(value)}
     fun setGyro(enabled:Boolean)=viewModelScope.launch {settingsRepo.setGyro(enabled)}
 }

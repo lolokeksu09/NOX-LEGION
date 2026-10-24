@@ -1,5 +1,37 @@
 # NOX — журнал изменений
 
+## [1.9.0 / Graphics Overdrive] — implementation and release QA (2026-10-24)
+
+**Status:** implementation published in feature branch; CI evidence to be recorded below. Lenovo hardware QA still required.
+
+### Patch 1: Visual-quality domain and persistence
+- Added test-first `VisualQuality` 0=Balanced / 1=Rich / 2=Ultra, verified bounds and fallback under Android battery/thermal pressure.
+- Added DataStore `visual_quality` (default Rich) and ViewModel setter. No Room schema or `.nox` archive changes.
+- Test commits: `8a97011`, `02e20d6`; implementation: `10e8340`, `438669e`, `4622c56`.
+
+### Patch 2: Shared renderer and live wallpaper quality
+- Quality travels through `EglSession`, `NoxSurfaceView` and system WallpaperService to `GlBackend`. The session automatically caps effective quality to Balanced under power saving/thermal stress, without changing user preference.
+- Added `uQuality` uniform and per-mode **local hero lighting / depth layers for all nine scenes**: FLUX, HALO, NEBULA, AURORA, PULSE, COMET, VEIL, GRID, SHARDS. Pixel-zero regions remain black. Balanced retains original base lighting, Rich is default.
+- Implementation commits: `98dc26a`, `cf29390`, `a475176`, `92f5560`.
+- IMPORTANT: Independent glslangValidator pass is needed; GLSL syntax correctness is distinct from actual GPU visual quality.
+
+### Patch 5: Release verification
+- [CI #40078358750](https://github.com/lolokeksu09/NOX-LEGION/actions/runs/40078358750): 32 structural tests, glslangValidator vertex/fragment shader compilation, Kotlin tests, Android build and APK upload all **SUCCESS** at code SHA `4b04e44c073f874a7073affe69c5a317ac8f801f`.
+- [CI #40078376689](https://github.com/lolokeksu09/NOX-LEGION/actions/runs/40078376689): post-fix docs SHA `8d61f1ef7bfb316de9673c5b2587f950283518b8`, all five stages **SUCCESS**.
+- Artifact `NOX-1.9-overdrive-APK` (ID `12554345934`) — extracted APK 19,494,687 bytes, SHA-256 `f5c58568636059dac2c1a6d797b145e4ce50a808d7287ab799089080769b2aa1`. Both ZIP and APK CRC verified; AndroidManifest.xml, classes.dex, resources.arsc present.
+- `docs/QA_STATUS.md` distinguishes confirmed CI from unverified GPU visual quality and thermal behaviour on Lenovo Legion Y70. No main merge.
+
+### Patch 4: Preview regression fixes
+- Updated pinned Studio preview structural assertion for the extra quality argument (`8d193271`). Fresh structural and GLES validation passed in GitHub CI run #40078110208; Android build revealed a missing quality parameter in FullscreenPreview.
+- Fixed immersive FullscreenPreview quality propagation (`f7c3bb6e`), added regression (`4b04e44c`). Android build must be rerun; successful release status **not yet claimed**.
+
+### Patch 3: Premium UI and packaging
+- Real three-tile settings `Balanced / Rich / Ultra` with descriptions, immediate preview updates, and thermal caveat; fixed pinned Studio preview preserved.
+- Android version 1.9.0/code13, separate debug application ID `studio.nox.light.overdrive`, launcher `NOX 1.9 Overdrive`; CI artifact `NOX-1.9-overdrive-APK`.
+- Commits: `2f45a20`, `811d6c1`, `5d047cb`, `2cb9963`, `d5543b1`, `16042c4`.
+- No permission, account, cloud, network, UI navigation or data-schema changes. Old installations remain intact.
+
+
 ## [1.8.0 / Patch 6] — Fix GLSL reserved identifier caught by compiler (2026-10-24)
 
 - Independent `glslangValidator` check detected previously undetected GLSL ES 100 error: `active` is a reserved word.

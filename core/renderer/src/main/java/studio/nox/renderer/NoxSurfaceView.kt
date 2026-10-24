@@ -10,16 +10,17 @@ class NoxSurfaceView(context:Context): SurfaceView(context),SurfaceHolder.Callba
     private var session: EglSession?=null
     private var config=SceneConfig("FLUX")
     private var fps=60
+    private var quality=1
     var onError:(String)->Unit={}
     init { holder.addCallback(this); setZOrderOnTop(false) }
     override fun surfaceCreated(holder:SurfaceHolder) {
         val s=EglSession(context){ message -> post { onError(message) } }
-        session=s;s.setConfig(config);s.setRequestedFps(fps)
+        session=s;s.setConfig(config);s.setRequestedFps(fps);s.setQuality(quality)
         s.start(holder.surface,width,height);s.setVisible(true)
     }
     override fun surfaceChanged(holder:SurfaceHolder,format:Int,width:Int,height:Int) { session?.resize(width,height) }
     override fun surfaceDestroyed(holder:SurfaceHolder) { session?.close();session=null }
-    fun configure(c:SceneConfig,frames:Int) { config=c;fps=frames;session?.setConfig(c);session?.setRequestedFps(frames) }
+    fun configure(c:SceneConfig,frames:Int,quality:Int) { config=c;fps=frames;this.quality=quality;session?.setConfig(c);session?.setRequestedFps(frames);session?.setQuality(quality) }
     fun pauseRender() { session?.setVisible(false) }
     fun resumeRender() { session?.setVisible(true) }
     fun tilt(x:Float,y:Float) { session?.setTilt(x,y) }

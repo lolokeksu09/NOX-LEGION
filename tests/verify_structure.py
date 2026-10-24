@@ -41,7 +41,7 @@ class StructuralContracts(unittest.TestCase):
         self.assertIn('onVariant(variant)',home)
         self.assertIn('homeDraft=variant.config',ui)
         self.assertIn('onExport(config)',home)
-        self.assertIn('LivePreview(config,fps,gyro,Modifier.fillMaxSize())',home)
+        self.assertIn('LivePreview(config,fps,gyro,quality,Modifier.fillMaxSize())',home)
 
     def test_new_scenes_use_canvas_minis_and_category_filter(self):
         ui=self.read('app/src/main/java/studio/nox/app/NoxApp.kt')
@@ -54,6 +54,41 @@ class StructuralContracts(unittest.TestCase):
         self.assertIn('SceneCategory.AMBIENT',gallery)
         self.assertIn('filterFavorites',gallery)
         self.assertIn('GridItemSpan(2)',gallery)
+
+    def test_graphics_overdrive_quality_is_persistent_and_live(self):
+        data=self.read('core/data/src/main/java/studio/nox/data/SettingsRepository.kt')
+        viewmodel=self.read('app/src/main/java/studio/nox/app/NoxViewModel.kt')
+        ui=self.read('app/src/main/java/studio/nox/app/NoxApp.kt')
+        surface=self.read('core/renderer/src/main/java/studio/nox/renderer/NoxSurfaceView.kt')
+        egl=self.read('core/renderer/src/main/java/studio/nox/renderer/EglSession.kt')
+        wallpaper=self.read('feature/wallpaper/src/main/java/studio/nox/wallpaper/NoxWallpaperService.kt')
+        gl=self.read('core/renderer/src/main/java/studio/nox/renderer/GlBackend.kt')
+        for term in ('intPreferencesKey("visual_quality")','val quality:Int=1','suspend fun setQuality'):
+            self.assertIn(term,data)
+        self.assertIn('fun setQuality(value:Int)',viewmodel)
+        for term in ('settings.quality','onQuality=vm::setQuality','Rich','Ultra','Balanced'):
+            self.assertIn(term,ui)
+        self.assertIn('it.configure(config,fps,quality)',ui)
+        self.assertIn('FullscreenPreview(config,fps,gyro,quality',ui)
+        self.assertIn('private fun FullscreenPreview(config:SceneConfig,fps:Int,gyro:Boolean,quality:Int',ui)
+        self.assertIn('fun configure(c:SceneConfig,frames:Int,quality:Int)',surface)
+        self.assertIn('session?.setQuality(quality)',surface)
+        self.assertIn('fun setQuality(value:Int)',egl)
+        self.assertIn('VisualQuality.effective(',egl)
+        self.assertIn('s.setQuality(last.quality)',wallpaper)
+        self.assertIn('session?.setQuality(prefs.quality)',wallpaper)
+        self.assertIn('uQuality',gl)
+
+    def test_graphics_overdrive_has_real_depth_for_all_nine_modes(self):
+        gl=self.read('core/renderer/src/main/java/studio/nox/renderer/GlBackend.kt')
+        for term in ('// OVERDRIVE FLUX','// OVERDRIVE HALO','// OVERDRIVE NEBULA',
+                     '// OVERDRIVE AURORA','// OVERDRIVE PULSE','// OVERDRIVE COMET',
+                     '// OVERDRIVE VEIL','// OVERDRIVE GRID','// OVERDRIVE SHARDS'):
+            self.assertIn(term,gl)
+        self.assertIn('float qualityMix=',gl)
+        self.assertIn('vec3 premiumDetail=',gl)
+        self.assertIn('uQuality',gl)
+        self.assertIn('min(sum,vec3(1.0))',gl)
 
     def test_spectra_modes_keep_previous_six_branches(self):
         shader=self.read('core/renderer/src/main/java/studio/nox/renderer/GlBackend.kt')
@@ -82,7 +117,7 @@ class StructuralContracts(unittest.TestCase):
         self.assertIn('SceneSurprise.choose(homeScene',ui)
         self.assertIn('homeDraft=next',ui)
         self.assertIn('ScenePresets.forScene(scene)',home)
-        self.assertIn('LivePreview(config,fps,gyro,Modifier.fillMaxSize())',home)
+        self.assertIn('LivePreview(config,fps,gyro,quality,Modifier.fillMaxSize())',home)
 
     def test_light_dynamics_three_live_scenes(self):
         src=self.read('core/renderer/src/main/java/studio/nox/renderer/GlBackend.kt')
@@ -145,7 +180,7 @@ class StructuralContracts(unittest.TestCase):
         studio = source.split('@Composable private fun StudioScreen(', 1)[1].split('@Composable private fun FullscreenPreview(', 1)[0]
         self.assertIn('BoxWithConstraints(Modifier.fillMaxSize())', studio)
         self.assertIn('Column(Modifier.fillMaxSize().padding(horizontal=18.dp))', studio)
-        pinned_preview = studio.index('LivePreview(displayConfig,fps,gyro,Modifier.fillMaxSize())')
+        pinned_preview = studio.index('LivePreview(displayConfig,fps,gyro,quality,Modifier.fillMaxSize())')
         scrollable_controls = studio.index('Column(Modifier.weight(1f).verticalScroll(rememberScrollState()))')
         self.assertLess(pinned_preview, scrollable_controls)
         self.assertEqual(studio.count('verticalScroll(rememberScrollState())'), 1,
@@ -289,8 +324,8 @@ class StructuralContracts(unittest.TestCase):
             self.assertIn(symbol, ui, 'NOX 1.1 must expose real editor or discovery functionality: ' + symbol)
     def test_app_upgrades_existing_install_in_place(self):
         app=self.read('app/build.gradle.kts')
-        for contract in ['applicationId = "studio.nox.light"', 'applicationIdSuffix = ".spectra"', 'versionCode = 12',
-                         'versionName = "1.8.0"']:
+        for contract in ['applicationId = "studio.nox.light"', 'applicationIdSuffix = ".overdrive"', 'versionCode = 13',
+                         'versionName = "1.9.0"']:
             self.assertIn(contract, app)
     def test_build_workflow_creates_apk(self):
         workflow=self.read('.github/workflows/android.yml')

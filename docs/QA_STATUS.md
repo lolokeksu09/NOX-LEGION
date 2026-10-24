@@ -1,3 +1,23 @@
+# NOX 1.9 Graphics Overdrive — verified CI / hardware QA pending (2026-10-24)
+
+## Confirmed, not inferred
+- Live nine-mode GLES renderer has persisted `uQuality` 0/1/2 (Balanced/Rich/Ultra), additional localized glowing accents per each original mode, and keeps pure-black background in empty pixels. `GlBackend.draw`, `EglSession`, `NoxSurfaceView`, and `NoxWallpaperService` accept the saved quality setting; Android thermal/power saver downgrades rendering quality without overwriting preferences.
+- [Run #40078358750](https://github.com/lolokeksu09/NOX-LEGION/actions/runs/40078358750), code and tests SHA `4b04e44c073f874a7073affe69c5a317ac8f801f`: **all success** — 32 structural tests, glslangValidator GLSL ES 100, Kotlin/JUnit, Android `:app:assembleDebug` and artifact upload.
+- [Run #40078376689](https://github.com/lolokeksu09/NOX-LEGION/actions/runs/40078376689), documentation SHA `8d61f1ef7bfb316de9673c5b2587f950283518b8`: the same five steps also reported success.
+- Artifact from run 40078358750: ID `12554345934`, name `NOX-1.9-overdrive-APK`. Extracted APK is **19,494,687 bytes**, SHA-256 `f5c58568636059dac2c1a6d797b145e4ce50a808d7287ab799089080769b2aa1`. Container CRC checks passed for artifact ZIP and APK, manifest, DEX and resources present.
+- Earlier red tests caught missing quality features, previous CI found an omitted fullscreen-preview quality parameter. Fixed with regression tests. Changelog captures exact commits and evidence.
+
+## Hardware verification still required
+- Lenovo Legion Y70 2026: **true GPU frame rate, driver GLSL shader operation**, effect brightness, actual Rich/Ultra difference, power/thermal fallback, flicker, touch/gyro, screen lock/unlock, wallpaper installation, export PNG and system wake/sleep.
+- At 120 FPS, measure device temperature, power consumption and any thermal throttling. Quality is a choice, not a measured FPS promise.
+- PNG export uses Rich by default; quality setting currently applies to live preview and system live wallpaper.
+- NOX 1.9 uses separate debug package `studio.nox.light.overdrive`, version 1.9.0/code13. It does not delete existing 1.8 or migrate its private presets. Use in-app .nox export/import where available and keep the old installation.
+
+## Sources
+[Design](superpowers/specs/2026-10-24-nox-1-9-graphics-overdrive-design.md) · [Plan](superpowers/plans/2026-10-24-nox-1-9-graphics-overdrive.md) · [Changelog](CHANGELOG.md) · [Contributor rules](../AGENTS.md)
+
+---
+
 # NOX 1.8 Spectra — CI verification and device QA (2026-10-24)
 
 ## Verified in GitHub Actions

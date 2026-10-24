@@ -9,6 +9,7 @@ import android.util.Log
 import android.view.Surface
 import studio.nox.model.FrameBudget
 import studio.nox.model.SceneConfig
+import studio.nox.model.VisualQuality
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.TimeUnit
 
@@ -19,6 +20,8 @@ class EglSession(private val context: Context, private val onError: (String)->Un
     private var backend: GlBackend?=null
     private var cfg=SceneConfig("FLUX")
     private var fps=60
+    private var quality=VisualQuality.RICH
+    private var effectiveQuality=VisualQuality.RICH
     private var visible=false
     private var active=true
     private var tiltX=0f; private var tiltY=0f
@@ -34,9 +37,10 @@ class EglSession(private val context: Context, private val onError: (String)->Un
                 val now=SystemClock.uptimeMillis()
                 if(now-lastPowerCheck>2000L) {
                     actualFps=FrameBudget.allowed(fps,powerManager?.isPowerSaveMode==true,if(android.os.Build.VERSION.SDK_INT>=29)powerManager?.currentThermalStatus?:0 else 0)
+                    effectiveQuality=VisualQuality.effective(quality,powerManager?.isPowerSaveMode==true,if(android.os.Build.VERSION.SDK_INT>=29)powerManager?.currentThermalStatus?:0 else 0)
                     lastPowerCheck=now
                 }
-                backend?.draw(cfg,(SystemClock.elapsedRealtimeNanos()-start)/1e9f,tiltX,tiltY,touchX,touchY)
+                backend?.draw(cfg,(SystemClock.elapsedRealtimeNanos()-start)/1e9f,tiltX,tiltY,touchX,touchY,effectiveQuality)
                 backend?.swap()
             } catch(t:Throwable) {
                 Log.e("NOX","GL frame failed",t)
@@ -55,6 +59,7 @@ class EglSession(private val context: Context, private val onError: (String)->Un
     fun resize(w:Int,h:Int)=handler.post { backend?.resize(w,h) }
     fun setConfig(config:SceneConfig)=handler.post { cfg=config.normalized() }
     fun setRequestedFps(value:Int)=handler.post { fps=value;lastPowerCheck=0L }
+    fun setQuality(value:Int)=handler.post { quality=VisualQuality.normalized(value);lastPowerCheck=0L }
     fun setTilt(x:Float,y:Float)=handler.post { tiltX=x.coerceIn(-1f,1f);tiltY=y.coerceIn(-1f,1f) }
     fun setTouch(x:Float,y:Float)=handler.post { touchX=x;touchY=y }
     fun setVisible(value:Boolean)=handler.post { visible=value;if(value){lastPowerCheck=0L;schedule()} else handler.removeCallbacks(frame) }

@@ -32,12 +32,12 @@ internal class GlBackend private constructor(
         GLES20.glGetProgramiv(program,GLES20.GL_LINK_STATUS,linked,0)
         if (linked[0] == 0) throw IllegalStateException("Shader link: ${GLES20.glGetProgramInfoLog(program)}")
         GLES20.glDeleteShader(vertex); GLES20.glDeleteShader(fragment)
-        uniforms = listOf("uTime","uResolution","uMode","uColorA","uColorB","uGlow","uDensity","uMotion","uTouch","uSeed")
+        uniforms = listOf("uTime","uResolution","uMode","uColorA","uColorB","uGlow","uDensity","uMotion","uTouch","uSeed","uQuality")
             .associateWith { GLES20.glGetUniformLocation(program,it) }
     }
 
     fun resize(w: Int,h: Int) { width=w.coerceAtLeast(1);height=h.coerceAtLeast(1) }
-    fun draw(config: SceneConfig, time: Float, tiltX: Float, tiltY: Float, touchX: Float, touchY: Float) {
+    fun draw(config: SceneConfig, time: Float, tiltX: Float, tiltY: Float, touchX: Float, touchY: Float, quality:Int=1) {
         val c = config.normalized()
         GLES20.glViewport(0,0,width,height)
         GLES20.glClearColor(0f,0f,0f,1f); GLES20.glClear(GLES20.GL_COLOR_BUFFER_BIT)
@@ -52,6 +52,7 @@ internal class GlBackend private constructor(
         GLES20.glUniform2f(uniforms.getValue("uMotion"),tiltX*c.motion,tiltY*c.motion)
         GLES20.glUniform2f(uniforms.getValue("uTouch"),touchX,touchY)
         GLES20.glUniform1f(uniforms.getValue("uSeed"),c.seed.toFloat())
+        GLES20.glUniform1f(uniforms.getValue("uQuality"),quality.coerceIn(0,2).toFloat())
         val pos = GLES20.glGetAttribLocation(program,"aPosition")
         GLES20.glEnableVertexAttribArray(pos)
         buffer.position(0)
@@ -108,7 +109,7 @@ void main() { vUv = aPosition * 0.5 + 0.5; gl_Position = vec4(aPosition,0.0,1.0)
 private const val FRAGMENT = """
 precision highp float;
 varying vec2 vUv;
-uniform float uTime, uMode, uGlow, uDensity, uSeed;
+uniform float uTime, uMode, uGlow, uDensity, uSeed, uQuality;
 uniform vec2 uResolution, uMotion, uTouch;
 uniform vec3 uColorA, uColorB;
 // Bounded, trig-free lattice hash: avoids huge sin() inputs that can vary on mobile GPUs.
@@ -324,6 +325,119 @@ void main() {
     vec2 tp=vec2((uTouch.x-0.5)*uResolution.x/uResolution.y,uTouch.y-0.5);
     float d=length(p-tp);
     sum += uColorA*exp(-d*25.0)*0.32;
+  }
+  // OVERDRIVE: rich localized accents, never a flat screen-wide gray lift.
+  float qualityMix=clamp(uQuality*0.58,0.0,1.16);
+  vec3 premiumDetail=vec3(0.0);
+  if(uQuality>0.5) {
+    if(uMode<0.5) {
+      // OVERDRIVE FLUX: large draped ribbons, luminous cores and subtle tracer sparks.
+      for(int i=0;i<5;++i) {
+        float n=float(i);
+        float w=0.15*sin(p.y*4.2+n*0.91+uTime*0.19)+0.042*sin(p.y*11.8-uTime*0.26+n);
+        float d=abs(p.x-w-(n-2.0)*0.112);
+        float broad=exp(-d*d/(0.012+0.018*uDensity));
+        float filament=exp(-d*(86.0-19.0*uDensity));
+        float shimmer=0.7+0.3*sin(p.y*10.0+n+uTime*0.23);
+        premiumDetail+=mix(uColorA,uColorB,n/4.0)*
+          (broad*(0.044+uGlow*0.085)+filament*(0.07+uGlow*0.09))*shimmer;
+      }
+    } else if (uMode<1.5) {
+      // OVERDRIVE HALO: hero nucleus, stacked corona and orbit highlights.
+      float r=length(p*vec2(1.05,0.82));
+      float core=exp(-r*28.0);
+      float corona=exp(-abs(r-0.23)*26.0)*(0.6+0.4*sin(atan(p.y,p.x)*4.0+uTime*0.1));
+      float outer=exp(-abs(r-0.36)*41.0)*(0.56+0.44*cos(atan(p.y,p.x)*6.0-uTime*0.1));
+      premiumDetail+=uColorA*core*(0.08+uGlow*0.17)+
+         mix(uColorA,uColorB,0.55)*corona*(0.06+uGlow*0.16)+
+         uColorB*outer*(0.028+uGlow*0.055);
+    } else if (uMode<2.5) {
+      // OVERDRIVE NEBULA: multi-depth gas clouds without cell discontinuities.
+      vec2 nebula=p-vec2(0.038*sin(uTime*0.08),-0.045);
+      nebula.x+=0.06*sin(nebula.y*7.0+uTime*0.12);
+      float galaxy=exp(-dot(nebula/vec2(0.31,0.19),nebula/vec2(0.31,0.19))*1.45);
+      float ridges=pow(0.5+0.5*sin(nebula.x*15.0+nebula.y*7.0+uTime*0.16)*
+                     cos(nebula.y*13.0-nebula.x*5.0),2.2);
+      float veil=exp(-dot((nebula-vec2(-0.09,0.08))/vec2(0.23,0.31),
+                          (nebula-vec2(-0.09,0.08))/vec2(0.23,0.31))*2.0);
+      premiumDetail+=uColorB*galaxy*ridges*(0.16+0.26*uGlow)+
+                    uColorA*veil*(0.038+0.08*uGlow);
+    } else if (uMode<3.5) {
+      // OVERDRIVE AURORA: wide cinematic light curtains and fine plasma silk.
+      for(int i=0;i<4;++i) {
+        float n=float(i);
+        float center=(n-1.5)*0.16+0.10*sin(p.y*4.0+n+uTime*0.12);
+        float dx=abs(p.x-center);
+        float wide=exp(-dx*dx/(0.008+uDensity*0.012));
+        float veins=exp(-dx*(130.0+40.0*uDensity));
+        float fade=smoothstep(-0.52,-0.22,p.y)*(1.0-smoothstep(0.23,0.55,p.y));
+        premiumDetail+=mix(uColorA,uColorB,n/3.0)*
+            (wide*0.13+veins*0.14)*fade*(0.65+0.35*sin(p.y*5.0+n+uTime*0.08));
+      }
+    } else if (uMode<4.5) {
+      // OVERDRIVE PULSE: glowing energy nucleus and secondary shockwaves.
+      vec2 focus=vec2(0.0,0.015);
+      if(uTouch.x>=0.0) focus=mix(focus,vec2((uTouch.x-0.5)*uResolution.x/uResolution.y,uTouch.y-0.5),0.78);
+      float radius=length(p-focus);
+      float nucleus=exp(-radius*33.0);
+      float shock=exp(-abs(radius-(0.16+0.03*sin(uTime*0.17)))*38.0);
+      float ripple=exp(-abs(radius-0.30)*58.0);
+      premiumDetail+=uColorA*nucleus*(0.17+0.29*uGlow)+
+          mix(uColorA,uColorB,0.53)*shock*(0.045+0.10*uGlow)+
+          uColorB*ripple*(0.03+0.09*uGlow);
+    } else if (uMode<5.5) {
+      // OVERDRIVE COMET: hero drifting streaks with brighter inner trails.
+      vec2 origin=vec2(0.12*sin(uTime*0.14),-0.08+0.10*cos(uTime*0.11));
+      vec2 difference=p-origin;
+      vec2 dir=normalize(vec2(0.82,-0.57));
+      float longitudinal=dot(difference,dir);
+      float transverse=abs(dot(difference,vec2(-dir.y,dir.x)));
+      float trail=exp(-transverse*58.0)*(1.0-smoothstep(-0.002,0.013,longitudinal))*
+            exp(min(0.0,longitudinal)*5.0);
+      float focal=exp(-length(difference)*25.0);
+      premiumDetail+=mix(uColorA,uColorB,0.22)*(trail*(0.16+0.20*uGlow)+focal*(0.07+0.13*uGlow));
+    } else if (uMode<6.5) {
+      // OVERDRIVE VEIL: enveloping luminous fog strata with fine glowing veins.
+      for(int i=0;i<4;++i) {
+        float n=float(i);
+        float center=(n-1.5)*0.12+0.035*sin(p.x*10.0+n+uTime*0.1);
+        float distanceToLayer=abs(p.y-center);
+        float fog=exp(-distanceToLayer*distanceToLayer/(0.007+0.010*uDensity));
+        float vein=exp(-distanceToLayer*48.0);
+        float taper=exp(-p.x*p.x*5.0);
+        premiumDetail+=mix(uColorA,uColorB,n/3.0)*
+           (fog*(0.083+uGlow*0.09)+vein*0.026)*taper;
+      }
+    } else if (uMode<7.5) {
+      // OVERDRIVE GRID: electric horizon and light nodes at line intersections.
+      float ground=max(0.0,0.13-p.y);
+      float scale=1.0/(0.16+ground*2.6);
+      vec2 lattice=vec2((p.x+0.045*sin(p.y*2.2+uTime*0.12))*scale*3.0,
+           scale*1.55+uTime*0.018+uSeed*0.00017);
+      vec2 edge=abs(fract(lattice+0.5)-0.5);
+      float intersections=exp(-(edge.x+edge.y)*45.0);
+      float perspective=smoothstep(0.018,0.17,ground);
+      float lightHorizon=exp(-abs(p.y-0.115)*37.0);
+      premiumDetail+=uColorA*intersections*perspective*(0.11+uGlow*0.20)+
+        uColorB*lightHorizon*(0.025+uGlow*0.08);
+    } else {
+      // OVERDRIVE SHARDS: large centerpiece facet with refractive edges.
+      vec2 shift=vec2(0.08*sin(uTime*0.075),0.05*cos(uTime*0.06));
+      vec2 crystal=p-shift;
+      float angle=uTime*0.06;
+      mat2 rot=mat2(cos(angle),-sin(angle),sin(angle),cos(angle));
+      crystal=rot*crystal;
+      float diamond=abs(crystal.x)*0.92+abs(crystal.y)*1.11;
+      float border=exp(-abs(diamond-0.235)*87.0);
+      float inner=1.0-smoothstep(0.08,0.22,diamond);
+      float facet=0.55+0.45*smoothstep(-0.21,0.21,crystal.x-crystal.y);
+      float refraction=exp(-abs(crystal.x+crystal.y*0.6)*40.0)*inner;
+      premiumDetail+=mix(uColorA,uColorB,facet)*
+           (border*(0.10+0.23*uGlow)+inner*facet*0.055+refraction*0.082);
+    }
+    // Preserve rich local contrast without washing black pixels to charcoal.
+    sum+=premiumDetail*qualityMix;
+    sum*=1.0+qualityMix*0.22;
   }
   // Preserve the deep-black backdrop instead of adding synthetic gray noise.
   gl_FragColor=vec4(min(sum,vec3(1.0)),1.0);

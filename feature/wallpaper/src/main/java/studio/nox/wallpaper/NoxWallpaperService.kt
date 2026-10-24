@@ -39,6 +39,7 @@ class NoxWallpaperService: WallpaperService() {
                     last=prefs
                     session?.setConfig(scene)
                     session?.setRequestedFps(prefs.fps)
+                    session?.setQuality(prefs.quality)
                     updateSensor()
                 }
             }
@@ -47,6 +48,7 @@ class NoxWallpaperService: WallpaperService() {
             super.onSurfaceCreated(holder)
             val s=EglSession(this@NoxWallpaperService)
             session=s
+            s.setQuality(last.quality)
             s.start(holder.surface,holder.surfaceFrame.width(),holder.surfaceFrame.height())
             s.setVisible(visible)
         }

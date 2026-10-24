@@ -1,3 +1,23 @@
+# NOX 1.9 — Graphics Overdrive
+
+Nine offline AMOLED live wallpapers upgraded with **real layered GPU lighting** rather than simply adding more scenes.
+
+**What's new**
+- FLUX: broad light ribbons and luminous cores; HALO: corona and central light nucleus; NEBULA: richer gaseous clouds behind the stars.
+- AURORA: cinematic curtain layers; PULSE: energy core with shockwave glow; COMET: prominent hero streaks.
+- VEIL: silky multi-depth mist; GRID: illuminated intersections and horizon; SHARDS: large refraction-style centerpiece facets.
+- **Quality selector:** Settings → Graphics quality → **Balanced / Rich / Ultra**. Balanced retains lean effects; Rich (new default) enables richer scene depth; Ultra adds maximum lighting detail. This is a *real GPU shader setting*, saved locally in DataStore.
+- When Android activates power-saving or reports elevated thermal stress, the engine temporarily uses Balanced, retaining the chosen setting for normal conditions. Existing FPS limits still apply.
+- Both Home and Studio pinned previews and the installed live wallpaper use the saved setting. Static PNG renders use Rich. The preview/WallpaperService remain offline with no new permissions.
+
+**Safety and compatibility:** original nine scene IDs, saved presets, .nox file format and Room schema are unchanged. The Android preview is version `1.9.0`, versionCode `13`, debug application ID `studio.nox.light.overdrive`; it installs **beside** NOX 1.8. Do not uninstall a previous build to experiment: private preset databases do not migrate between distinct packages.
+
+**Verification:** GitHub Actions runs Python structure checks, Kotlin JUnit, standalone GLES 100 GLSL validation and Android APK build. On-device shader rendering, visuals, 60/120 FPS and thermals still require direct checks on Lenovo Legion Y70.
+
+[Graphics Overdrive design](docs/superpowers/specs/2026-10-24-nox-1-9-graphics-overdrive-design.md) · [Implementation plan](docs/superpowers/plans/2026-10-24-nox-1-9-graphics-overdrive.md) · [Changelog](docs/CHANGELOG.md) · [AGENTS rules](AGENTS.md)
+
+---
+
 # NOX 1.8 — Spectra
 
 Major offline AMOLED live-wallpaper update based on NOX 1.7.1. **Nine original GPU scenes** in one shared GLES renderer, no account/root/cloud or extra permissions.

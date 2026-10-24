@@ -55,6 +55,35 @@ class StructuralContracts(unittest.TestCase):
         self.assertIn('filterFavorites',gallery)
         self.assertIn('GridItemSpan(2)',gallery)
 
+    def test_spectra_modes_keep_previous_six_branches(self):
+        shader=self.read('core/renderer/src/main/java/studio/nox/renderer/GlBackend.kt')
+        for name,mode in (('VEIL','6f'),('GRID','7f'),('SHARDS','8f')):
+            self.assertIn('"'+name+'"->'+mode,shader)
+        for label in ('// VEIL 1.8:','// GRID 1.8:','// SHARDS 1.8:'):
+            self.assertIn(label,shader)
+        for bound in ('else if (uMode < 5.5)','else if (uMode < 6.5)',
+                      'else if (uMode < 7.5)'):
+            self.assertIn(bound,shader)
+        self.assertIn('GL_TRIANGLE_STRIP',shader)
+        self.assertIn('uniform vec2 uResolution, uMotion, uTouch;',shader)
+        self.assertIn('// COMET 1.7.1: depth-layered trails',shader)
+        self.assertNotIn('float active=',shader)
+
+    def test_spectra_gallery_canvas_and_home(self):
+        ui=self.read('app/src/main/java/studio/nox/app/NoxApp.kt')
+        home=ui.split('@Composable private fun HomeScreen(',1)[1].split('@Composable private fun StudioScreen(',1)[0]
+        miniature=ui.split('@Composable private fun Miniature(',1)[1].split('@Composable private fun SettingsScreen(',1)[0]
+        for fragment in ('"VEIL" ->','"GRID" ->','"SHARDS" ->'):
+            self.assertIn(fragment,miniature)
+        for label in ('"VEIL" -> "','"GRID" -> "','"SHARDS" -> "'):
+            self.assertIn(label,home)
+        self.assertIn('SceneCatalog.ids.forEach',home)
+        self.assertIn('onSurprise',home)
+        self.assertIn('SceneSurprise.choose(homeScene',ui)
+        self.assertIn('homeDraft=next',ui)
+        self.assertIn('ScenePresets.forScene(scene)',home)
+        self.assertIn('LivePreview(config,fps,gyro,Modifier.fillMaxSize())',home)
+
     def test_light_dynamics_three_live_scenes(self):
         src=self.read('core/renderer/src/main/java/studio/nox/renderer/GlBackend.kt')
         for expected in (
@@ -67,7 +96,7 @@ class StructuralContracts(unittest.TestCase):
             'vec2 focus=',
             '// COMET 1.7.1: depth-layered trails',
             'float depth=',
-            'float active=step(',
+            'float visibilityMask=step(',
             'float trailFade='
         ):
             self.assertIn(expected,src)
@@ -260,8 +289,8 @@ class StructuralContracts(unittest.TestCase):
             self.assertIn(symbol, ui, 'NOX 1.1 must expose real editor or discovery functionality: ' + symbol)
     def test_app_upgrades_existing_install_in_place(self):
         app=self.read('app/build.gradle.kts')
-        for contract in ['applicationId = "studio.nox.light"', 'applicationIdSuffix = ".lumina"', 'versionCode = 11',
-                         'versionName = "1.7.1"']:
+        for contract in ['applicationId = "studio.nox.light"', 'applicationIdSuffix = ".spectra"', 'versionCode = 12',
+                         'versionName = "1.8.0"']:
             self.assertIn(contract, app)
     def test_build_workflow_creates_apk(self):
         workflow=self.read('.github/workflows/android.yml')

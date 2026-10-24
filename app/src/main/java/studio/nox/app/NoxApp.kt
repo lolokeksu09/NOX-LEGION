@@ -52,6 +52,7 @@ import studio.nox.model.SceneConfig
 import studio.nox.model.SceneLooks
 import studio.nox.model.SceneLook
 import studio.nox.model.ScenePresets
+import studio.nox.model.SceneSurprise
 import studio.nox.model.SceneRegistry
 import studio.nox.model.SceneCategory
 import studio.nox.model.NamedScenePreset
@@ -196,6 +197,11 @@ private enum class Tab { HOME, STUDIO, LIBRARY, SETTINGS }
                     Tab.HOME -> HomeScreen(homeScene,active,homeDraft,settings.fps,settings.gyroEnabled,
                         onScene={homeScene=it;homeDraft=null},
                         onRemix={homeDraft=SceneLooks.shuffle(previewHomeConfig)},
+                        onSurprise={
+                            val next=SceneSurprise.choose(homeScene,System.nanoTime().toInt())
+                            homeScene=next.sceneId
+                            homeDraft=next
+                        },
                         onLook={look->homeDraft=SceneLooks.apply(previewHomeConfig,look)},
                         onVariant={variant->homeDraft=variant.config},
                         onEdit={config->
@@ -256,7 +262,7 @@ private enum class Tab { HOME, STUDIO, LIBRARY, SETTINGS }
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable private fun HomeScreen(
     scene:String, active:NoxPreset?, draft:SceneConfig?, fps:Int, gyro:Boolean,
-    onScene:(String)->Unit, onRemix:()->Unit, onLook:(SceneLook)->Unit,
+    onScene:(String)->Unit, onRemix:()->Unit, onSurprise:()->Unit, onLook:(SceneLook)->Unit,
     onVariant:(NamedScenePreset)->Unit,
     onEdit:(SceneConfig)->Unit, onApply:()->Unit, onExport:(SceneConfig)->Unit
 ) {
@@ -270,6 +276,9 @@ private enum class Tab { HOME, STUDIO, LIBRARY, SETTINGS }
         "AURORA" -> "Северное сияние в движении"
         "PULSE" -> "Ритм электрического света"
         "COMET" -> "Тонкие следы далёких комет"
+        "VEIL" -> "Шёлковая дымка в глубоком чёрном"
+        "GRID" -> "Световая архитектура бесконечности"
+        "SHARDS" -> "Медленно вращающиеся кристаллы"
         else -> "Линии, которые чувствуют движение"
     }
     Column(Modifier.fillMaxSize().padding(horizontal=18.dp)) {
@@ -333,6 +342,12 @@ private enum class Tab { HOME, STUDIO, LIBRARY, SETTINGS }
         Row(Modifier.fillMaxWidth().horizontalScroll(rememberScrollState())
             .padding(top=2.dp,bottom=5.dp),
             horizontalArrangement=Arrangement.spacedBy(5.dp),verticalAlignment=Alignment.CenterVertically) {
+            TextButton(onClick=onSurprise) {
+                Icon(Icons.Outlined.Shuffle,contentDescription=null,tint=Cyan,
+                    modifier=Modifier.size(18.dp))
+                Spacer(Modifier.width(7.dp))
+                Text("Сюрприз",color=Cyan,fontSize=12.sp)
+            }
             TextButton(onClick=onRemix) {
                 Icon(Icons.Outlined.AutoAwesome,contentDescription=null,tint=Cyan,
                     modifier=Modifier.size(18.dp))
@@ -1053,6 +1068,57 @@ private enum class Tab { HOME, STUDIO, LIBRARY, SETTINGS }
                         strokeWidth=size.minDimension*.009f,alpha=.77f)
                     drawCircle(if(i%2==0)a else b,radius=size.minDimension*.02f,
                         center=end,alpha=.92f)
+                }
+            }
+            "VEIL" -> {
+                for(i in 0 until 5) {
+                    val n=i.toFloat()
+                    val y=size.height*(.22f+n*.14f)
+                    val path=Path().apply {
+                        moveTo(-size.width*.12f,y)
+                        cubicTo(size.width*.34f,y-size.height*.13f,
+                            size.width*.60f,y+size.height*.18f,
+                            size.width*1.12f,y-size.height*.035f)
+                    }
+                    drawPath(path,if(i%2==0)a else b,
+                        style=Stroke(width=size.minDimension*(.10f+n*.008f)),alpha=.13f)
+                    drawPath(path,if(i%2==0)a else b,
+                        style=Stroke(width=size.minDimension*.012f),alpha=.58f)
+                }
+            }
+            "GRID" -> {
+                val horizon=size.height*.37f
+                for(i in -4..4) {
+                    val start=Offset(size.width*.5f+i*size.width*.22f,size.height*1.1f)
+                    val end=Offset(size.width*.5f+i*size.width*.025f,horizon)
+                    drawLine(if(i%2==0)a else b,start,end,
+                        strokeWidth=size.minDimension*.009f,alpha=.72f)
+                }
+                for(i in 0 until 6) {
+                    val t=i/6f
+                    val y=horizon+(size.height-horizon)*t*t
+                    drawLine(if(i%2==0)a else b,Offset(0f,y),Offset(size.width,y),
+                        strokeWidth=size.minDimension*.011f,alpha=.55f)
+                }
+            }
+            "SHARDS" -> {
+                for(i in 0 until 6) {
+                    val x=size.width*(.20f+(i*3%7)*.105f)
+                    val y=size.height*(.19f+(i*5%7)*.105f)
+                    val radius=size.minDimension*(.075f+(i%3)*.019f)
+                    val polygon=Path().apply {
+                        moveTo(x,y-radius)
+                        lineTo(x+radius*.72f,y)
+                        lineTo(x,y+radius)
+                        lineTo(x-radius*.72f,y)
+                        close()
+                    }
+                    val color=if(i%2==0)a else b
+                    drawPath(polygon,color.copy(alpha=.15f))
+                    drawPath(polygon,color,style=Stroke(width=size.minDimension*.016f),alpha=.78f)
+                    drawLine(color.copy(alpha=.68f),
+                        Offset(x,y-radius),Offset(x,y+radius),
+                        strokeWidth=size.minDimension*.006f)
                 }
             }
             "NEBULA" -> {

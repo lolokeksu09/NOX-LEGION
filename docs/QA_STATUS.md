@@ -1,3 +1,26 @@
+# NOX 1.8 Spectra — CI verification and device QA (2026-10-24)
+
+## Verified in GitHub Actions
+
+- New shared GLES shader modes 6=VEIL, 7=GRID, 8=SHARDS. Existing modes 0–5 unchanged except the COMET branch now has an explicit uMode bound and its invalid GLSL reserved identifier `active` was renamed.
+- Run [#40070162219](https://github.com/lolokeksu09/NOX-LEGION/actions/runs/40070162219) at source SHA `433d68a4be18eefdd2ffc1550da2e23f1b1070a3`: structural tests SUCCESS, independent `glslangValidator` GLES 100 vertex/fragment compile SUCCESS, Kotlin model JUnit SUCCESS, Android `:app:assembleDebug` SUCCESS, APK upload SUCCESS.
+- Artifact ID `12550619243`: `NOX-1.8-spectra-APK`. Extracted `app-debug.apk`: 19,494,691 bytes; SHA-256 `4a7d87a617dbed603cdabfe163b0b0fd034988257bd300aeb76aefb91e31df64`. Container ZIP CRC verification passed, `AndroidManifest.xml`, `classes.dex`, and `resources.arsc` present.
+- Run [#40070180123](https://github.com/lolokeksu09/NOX-LEGION/actions/runs/40070180123) at docs-only SHA `b4929389ca796c68afacdf65327cd51084dca978` also reported SUCCESS for the same five workflow steps when this QA note was prepared.
+
+## Not yet verified on Lenovo Legion Y70
+
+- Actual GPU-driver shader initialization, sustained FPS, thermal throttling and battery impact for VEIL/GRID/SHARDS (desktop GLES validator is not hardware QA).
+- Scene selection gestures, Surprise previews, pinned Studio preview, Android wallpaper service lifecycle, PNG export and file import of new IDs.
+- No visual artifacts or excessive flicker. The GLSL source was tested, but live appearance requires real device observation.
+
+## Safe installation
+
+- NOX 1.8.0/code12 debug package `studio.nox.light.spectra` runs side-by-side with 1.7.1. Previous preset databases are **not** automatically transferred; keep old installs.
+- The format of .nox archives is unchanged; old apps may explicitly reject new scene IDs. Import using NOX 1.8.
+- No Room migration, Internet, account, root or additional Android permissions.
+
+---
+
 # NOX 1.7.1 — Light Dynamics QA, 2026-10-23
 
 ## Verified in GitHub Actions

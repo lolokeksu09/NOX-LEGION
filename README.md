@@ -1,3 +1,25 @@
+# NOX 1.8 — Spectra
+
+Major offline AMOLED live-wallpaper update based on NOX 1.7.1. **Nine original GPU scenes** in one shared GLES renderer, no account/root/cloud or extra permissions.
+
+**New live wallpapers**
+- **VEIL:** slow silky luminous fog in dark void.
+- **GRID:** receding cyberpunk perspective wireframe with soft horizon glow.
+- **SHARDS:** floating, rotating faceted crystals with delicate edges.
+Each has three ready-made looks: Silk Blue/Ether Rose/Jade Haze; Cyan Matrix/Neon Sunset/Arctic Wire; Obsidian/Amethyst/Prism.
+
+**New function — Сюрприз:** cross-scene discovery chooses another one of nine scene types and a curated appearance, without changing stored presets. Use Home's horizontal nine-scene carousel, Variant/Looks panels, editor, PNG and system wallpaper application as before. 1.8 gallery shows GPU-free Canvas thumbnails for the new effects; scene categories, filters, sorting and favorites are preserved.
+
+**Compatibility:** first six modes are unchanged (FLUX, HALO, NEBULA, AURORA, PULSE, COMET). The existing Room layout and versioned `.nox` import/export remain compatible with new 1.8 app; older apps may reject new 1.8 IDs as unsupported. Old installations retain their private data.
+
+**Installation:** debug `studio.nox.light.spectra`, version `1.8.0`, code `12`. Installs *beside* 1.7.1 due Android app ID isolation — **do not uninstall the older working NOX**. Previous presets can only be moved using available in-app export/import, not read directly from another app's sandbox.
+
+**Verification:** CI Python structural tests, Kotlin model tests and `:app:assembleDebug`. CI builds the Android APK but does not compile GLSL on the Lenovo's GPU; visual quality, performance, thermals, live wallpaper and touch response need actual device QA.
+
+[Design specification](docs/superpowers/specs/2026-10-24-nox-1-8-spectra-design.md) · [Implementation plan](docs/superpowers/plans/2026-10-24-nox-1-8-spectra.md) · [Patch history](docs/CHANGELOG.md) · [Contributor requirements](AGENTS.md)
+
+---
+
 # NOX 1.7.1 — Light Dynamics
 
 A renderer-focused improvement to the six-scene offline AMOLED live-wallpaper studio.

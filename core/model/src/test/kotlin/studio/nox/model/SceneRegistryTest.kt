@@ -4,10 +4,10 @@ import org.junit.Assert.*
 import org.junit.Test
 
 class SceneRegistryTest {
-    @Test fun sixUniqueScenesWithStableLegacyOrder() {
-        assertEquals(listOf("FLUX","HALO","NEBULA","AURORA","PULSE","COMET"),SceneCatalog.ids)
+    @Test fun nineUniqueScenesWithStableLegacyOrder() {
+        assertEquals(listOf("FLUX","HALO","NEBULA","AURORA","PULSE","COMET","VEIL","GRID","SHARDS"),SceneCatalog.ids)
         assertEquals(SceneCatalog.ids,SceneRegistry.entries.map { it.id })
-        assertEquals(6,SceneRegistry.entries.map { it.id }.toSet().size)
+        assertEquals(9,SceneRegistry.entries.map { it.id }.toSet().size)
     }
 
     @Test fun categoryAndNewStatusAreCorrect() {
@@ -17,7 +17,7 @@ class SceneRegistryTest {
         assertEquals(SceneCategory.AMBIENT,SceneRegistry.get("AURORA")?.category)
         assertEquals(SceneCategory.TECH,SceneRegistry.get("PULSE")?.category)
         assertEquals(SceneCategory.COSMIC,SceneRegistry.get("COMET")?.category)
-        assertEquals(setOf("AURORA","PULSE","COMET"),SceneRegistry.entries.filter { it.isNew }.map { it.id }.toSet())
+        assertEquals(setOf("VEIL","GRID","SHARDS"),SceneRegistry.entries.filter { it.isNew }.map { it.id }.toSet())
         assertNull(SceneRegistry.get("UNKNOWN"))
     }
 
@@ -28,7 +28,7 @@ class SceneRegistryTest {
     }
 
     @Test fun newScenesNormalizeWithoutFallingBackToFlux() {
-        listOf("AURORA","PULSE","COMET").forEach { id ->
+        listOf("AURORA","PULSE","COMET","VEIL","GRID","SHARDS").forEach { id ->
             val c=SceneCatalog.default(id)
             assertEquals(id,c.sceneId)
             assertEquals(id,c.normalized().sceneId)

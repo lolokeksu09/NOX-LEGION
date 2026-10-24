@@ -10,9 +10,12 @@ object SceneRegistry {
         SceneDefinition("FLUX",SceneCategory.SIGNATURE),
         SceneDefinition("HALO",SceneCategory.SIGNATURE),
         SceneDefinition("NEBULA",SceneCategory.COSMIC),
-        SceneDefinition("AURORA",SceneCategory.AMBIENT,true),
-        SceneDefinition("PULSE",SceneCategory.TECH,true),
-        SceneDefinition("COMET",SceneCategory.COSMIC,true)
+        SceneDefinition("AURORA",SceneCategory.AMBIENT,false),
+        SceneDefinition("PULSE",SceneCategory.TECH,false),
+        SceneDefinition("COMET",SceneCategory.COSMIC,false),
+        SceneDefinition("VEIL",SceneCategory.AMBIENT,true),
+        SceneDefinition("GRID",SceneCategory.TECH,true),
+        SceneDefinition("SHARDS",SceneCategory.SIGNATURE,true)
     )
     fun get(id: String): SceneDefinition? = entries.firstOrNull { it.id==id }
 }

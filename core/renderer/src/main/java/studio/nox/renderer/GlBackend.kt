@@ -44,7 +44,7 @@ internal class GlBackend private constructor(
         GLES20.glUseProgram(program)
         GLES20.glUniform1f(uniforms.getValue("uTime"),time*c.speed)
         GLES20.glUniform2f(uniforms.getValue("uResolution"),width.toFloat(),height.toFloat())
-        GLES20.glUniform1f(uniforms.getValue("uMode"),when(c.sceneId){"FLUX"->0f;"HALO"->1f;"NEBULA"->2f;"AURORA"->3f;"PULSE"->4f;"COMET"->5f;else->0f})
+        GLES20.glUniform1f(uniforms.getValue("uMode"),when(c.sceneId){"FLUX"->0f;"HALO"->1f;"NEBULA"->2f;"AURORA"->3f;"PULSE"->4f;"COMET"->5f;"VEIL"->6f;"GRID"->7f;"SHARDS"->8f;else->0f})
         GLES20.glUniform3f(uniforms.getValue("uColorA"),((c.primary shr 16) and 255)/255f,((c.primary shr 8) and 255)/255f,(c.primary and 255)/255f)
         GLES20.glUniform3f(uniforms.getValue("uColorB"),((c.secondary shr 16) and 255)/255f,((c.secondary shr 8) and 255)/255f,(c.secondary and 255)/255f)
         GLES20.glUniform1f(uniforms.getValue("uGlow"),c.glow)
@@ -218,7 +218,7 @@ void main() {
                      halo*(0.015+0.062*uGlow))*cycleFade*glowStrength;
     }
     sum+=mix(uColorA,uColorB,0.32)*exp(-radial*45.0)*0.018*uGlow;
-  } else {
+  } else if (uMode < 5.5) {
     // COMET 1.7.1: depth-layered trails with independent drift.
     for(int i=0;i<7;++i) {
       float n=float(i);
@@ -243,14 +243,81 @@ void main() {
       float behind=1.0-smoothstep(-0.005,0.009,along);
       float trailFade=smoothstep(0.025,0.13,life)*
                        (1.0-smoothstep(0.87,0.995,life));
-      float active=step(hash(vec2(n+31.0,53.0)),0.37+0.63*uDensity);
+      float visibilityMask=step(hash(vec2(n+31.0,53.0)),0.37+0.63*uDensity);
       float distanceToHead=length(delta);
       float headGlow=exp(-distanceToHead*(160.0-24.0*randB));
       float softHalo=exp(-distanceToHead*35.0);
       vec3 spectrum=mix(uColorA,uColorB,randB);
       sum+=spectrum*(streak*behind*tail*(0.13+0.28*uGlow)+
           headGlow*(0.41+0.37*uGlow)+
-          softHalo*(0.010+0.024*uGlow))*depth*trailFade*active;
+          softHalo*(0.010+0.024*uGlow))*depth*trailFade*visibilityMask;
+    }
+  } else if (uMode < 6.5) {
+    // VEIL 1.8: slow, layered luminous mist with an absolute black field.
+    vec2 warped=p+vec2(0.022*sin(p.y*7.1+uTime*0.19),
+                       0.019*cos(p.x*6.2-uTime*0.12));
+    for(int i=0;i<5;++i) {
+      float n=float(i);
+      float phase=uSeed*0.0017+n*1.41+uTime*(0.085+0.013*n);
+      float bend=0.055*sin(warped.x*7.0+phase)+
+                 0.030*cos(warped.x*13.0-phase*0.74);
+      float center=(n-2.0)*0.082+bend;
+      float width=0.040+0.032*uDensity+0.009*n;
+      float dy=(warped.y-center)/width;
+      float silky=exp(-dy*dy*1.75);
+      float filament=exp(-abs(dy+0.20*sin(warped.x*17.0+phase))*7.0);
+      float horizontal=pow(0.5+0.5*sin(warped.x*3.4-phase*0.36),2.0);
+      float shape=smoothstep(-0.37,-0.07,warped.x)*
+                  (1.0-smoothstep(0.09,0.44,warped.x));
+      vec3 color=mix(uColorA,uColorB,clamp(0.20*n+0.11*horizontal,0.0,1.0));
+      sum+=color*(silky*(0.030+0.084*uGlow)+
+           filament*silky*(0.012+0.035*uGlow))*
+           (0.45+0.55*horizontal)*shape;
+    }
+  } else if (uMode < 7.5) {
+    // GRID 1.8: bounded, receding luminous perspective lattice.
+    float ground=max(0.0,0.13-p.y);
+    float horizonFade=smoothstep(0.018,0.17,ground);
+    float distanceScale=1.0/(0.16+ground*2.6);
+    float shift=uTime*0.018+uSeed*0.00017;
+    float axisX=(p.x+0.045*sin(p.y*2.2+uTime*0.12))*distanceScale*3.0;
+    float axisZ=distanceScale*1.55+shift;
+    float cellX=abs(fract(axisX+0.5)-0.5);
+    float cellZ=abs(fract(axisZ+0.5)-0.5);
+    float linesX=exp(-cellX*(95.0-30.0*uDensity));
+    float linesZ=exp(-cellZ*(98.0-28.0*uDensity));
+    float lattice=max(linesX,linesZ);
+    float depthFade=exp(-ground*0.72)*horizonFade;
+    float horizonGlow=exp(-abs(ground-0.10)*35.0)*horizonFade;
+    float brightness=(0.13+0.37*uGlow)*depthFade;
+    sum+=mix(uColorA,uColorB,0.26+0.33*ground)*lattice*brightness;
+    sum+=uColorB*horizonGlow*(0.008+0.028*uGlow);
+  } else {
+    // SHARDS 1.8: rotating faceted crystals with luminous edges and deep shadows.
+    float aspect=uResolution.x/uResolution.y;
+    for(int i=0;i<7;++i) {
+      float n=float(i);
+      float randA=hash(vec2(n+7.0,19.0));
+      float randB=hash(vec2(29.0,n+13.0));
+      float sizeFactor=0.65+0.50*randA;
+      vec2 center=vec2((randA-0.5)*aspect*0.80,
+                       (randB-0.5)*0.82);
+      center+=vec2(0.013*sin(uTime*0.24+n),0.020*cos(uTime*0.18+n));
+      float rotation=uTime*(0.058+0.034*randA)+n*1.71;
+      mat2 turn=mat2(cos(rotation),-sin(rotation),
+                     sin(rotation),cos(rotation));
+      vec2 local=turn*(p-center);
+      float radius=(0.046+0.049*uDensity)*sizeFactor;
+      float diamond=abs(local.x)*1.12+abs(local.y)*0.91;
+      float rim=exp(-abs(diamond-radius)*156.0);
+      float interior=1.0-smoothstep(radius*0.16,radius*0.90,diamond);
+      float facet=0.46+0.54*smoothstep(-radius*0.6,radius*0.5,local.x-local.y);
+      float seam=exp(-abs(local.x+local.y*0.5)*115.0)*interior;
+      float visibilityMask=step(hash(vec2(n+5.0,37.0)),0.33+0.67*uDensity);
+      vec3 crystal=mix(uColorA,uColorB,randB);
+      sum+=crystal*visibilityMask*(rim*(0.19+0.44*uGlow)+
+           interior*facet*(0.009+0.032*uGlow)+
+           seam*(0.013+0.031*uGlow));
     }
   }
   if(uTouch.x>=0.0) {

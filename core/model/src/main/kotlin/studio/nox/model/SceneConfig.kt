@@ -32,6 +32,9 @@ object SceneCatalog {
         "AURORA" -> SceneConfig("AURORA", 0x6DEBFF, 0x59FFA9, speed=0.18f, glow=0.63f, density=0.44f, motion=0.16f)
         "PULSE" -> SceneConfig("PULSE", 0x30D9FF, 0x315EFF, speed=0.30f, glow=0.66f, density=0.39f, motion=0.15f)
         "COMET" -> SceneConfig("COMET", 0x589DFF, 0xA6CFFF, speed=0.27f, glow=0.60f, density=0.40f, motion=0.12f)
+        "VEIL" -> SceneConfig("VEIL",0x69DFFF,0x5D65EA,speed=0.15f,glow=0.56f,density=0.58f,motion=0.16f)
+        "GRID" -> SceneConfig("GRID",0x29E6F7,0x335FE8,speed=0.25f,glow=0.65f,density=0.43f,motion=0.20f)
+        "SHARDS" -> SceneConfig("SHARDS",0x7ACAF9,0x4D60E8,speed=0.17f,glow=0.62f,density=0.55f,motion=0.18f)
         else -> SceneConfig("FLUX")
     }
     fun validName(value: String): String? = value.trim().takeIf { it.isNotBlank() && it.length <= 48 }

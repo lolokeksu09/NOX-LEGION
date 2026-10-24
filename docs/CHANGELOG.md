@@ -1,5 +1,55 @@
 # NOX — журнал изменений
 
+## [1.8.0 / Patch 6] — Fix GLSL reserved identifier caught by compiler (2026-10-24)
+
+- Independent `glslangValidator` check detected previously undetected GLSL ES 100 error: `active` is a reserved word.
+- Renamed `active` variables to `visibilityMask` and updated all references in COMET and SHARDS. No changes to visual formulas.
+- Updated structural regressions to reject the reserved identifier, preserving COMET/SHARDS culling.
+- Source/test commits: `99755c6`, `b8d039a`, `433d68a`. Confirmed [GitHub Actions #40070162219](https://github.com/lolokeksu09/NOX-LEGION/actions/runs/40070162219) successful for shader validation, JUnit, Android build and artifact, with source SHA `433d68a4`. Verified APK SHA-256 `4a7d87a617dbed603cdabfe163b0b0fd034988257bd300aeb76aefb91e31df64`.
+- Hardware/runtime behavior remains unverified.
+
+## [1.8.0 / Patch 5] — Build-time GLES shader validation (2026-10-24)
+
+- Added `tests/verify_glsl.py` which extracts the real VERTEX/FRAGMENT shader strings from GlBackend.kt, prepends `#version 100`, and compiles both with `glslangValidator`.
+- GitHub Actions installs `glslang-tools` and runs GPU shader syntax/semantic checks *before* model unit tests and APK packaging.
+- This catches GLSL compile problems beyond Android/Kotlin build validation. It does **not** verify phone-driver compatibility or thermal performance.
+- Commit series: `b3a7055` (validator), `2c24cec` (CI). Results require a successful exact-head GitHub run.
+
+## [1.8.0 / Patch 4] — Side-by-side Android preview and CI packaging (2026-10-24)
+
+- Updated versionName `1.8.0`, versionCode `12`, independent debug package `studio.nox.light.spectra`, launcher `NOX 1.8 Spectra`.
+- Workflow artifact renamed `NOX-1.8-spectra-APK`; updated structural version contracts.
+- README updated with nine scenes, Surprise, .nox limitations and Android build/runtime QA distinction.
+- Commits: `1492ce3`, `0cc18b8`, `8f80382`, `252b6d6`, `b782267`.
+- **Verification:** confirmed successful CI #40070162219, artifact ID 12550619243, `NOX-1.8-spectra-APK`; ZIP/APK integrity verified. Existing 1.7.1 working app untouched.
+
+## [1.8.0 / Patch 3] — Nine-scene gallery and Surprise discovery (2026-10-24)
+
+- Home: added natural-language descriptions for VEIL, GRID, SHARDS while preserving immersive animated hero and nine-scene horizontal selector.
+- Gallery: added GPU-free Canvas miniatures for VEIL, GRID, SHARDS and retained existing filters, favorites, saved looks, pinned preview and background wallpaper.
+- Added **Сюрприз**: one-tap jump to a different scene and a curated look (or deterministic remix for older modes), only changing the unsaved Home draft. Existing presets remain untouched.
+- Added SceneSurprise deterministic JUnit tests, including Int.MIN_VALUE and user-facing UI contract.
+- Source commits: `a6d73b0`, `d1866ea`, `653bc42`; tests `8414dc1`, `6b281ef`.
+- **Verification:** CI for this code was still running when written. No device shader/GPU QA yet.
+
+## [1.8.0 / Patch 2] — Three new procedural GPU wallpapers (2026-10-24)
+
+- Added new shared-GLES shader modes **VEIL=6**, **GRID=7**, **SHARDS=8**, using the existing time, colors, glow, density, motion, seed, and touch uniforms. Bounded loops; no extra EGL contexts.
+- VEIL: layered drifting mist; GRID: bounded perspective grid; SHARDS: rotating luminous diamonds with facets and softened edges.
+- Preserved original FLUX/HALO/NEBULA/AURORA/PULSE/COMET shader computations, mode IDs and global tone handling. COMET now uses explicit `uMode<5.5` dispatch to allow additional branches.
+- Structural shader regression tests written in `tests/verify_structure.py` before implementation.
+- Commit series: `2eaa26a` (red tests), `4a13bcd` (GPU modes). **Hardware shader compilation/thermals remain untested** until installation on Lenovo Legion Y70.
+
+## [1.8.0 / Patch 1] — Nine-scene catalog and nine new looks (2026-10-24)
+
+- Added VEIL / GRID / SHARDS to the immutable SceneRegistry, preserving the original six scene IDs and defaults.
+- Added scene-specific 1.8 defaults and 3 named colorways for each (9 new variants, all using existing SceneConfig fields); no Room migration or network.
+- Updated the `NEW` flags to identify new 1.8 entries, rather than labeling prior release scenes as new.
+- Added `SpectraCatalogTest`; revised `SceneRegistryTest` for nine scenes and archive compatibility.
+- Source/test commit sequence: `16fc515`, `eda1551`, `830798b`, `9ec9818`, `123c5ba`, `6d8b7ce`.
+- **Verification:** tests/CI pending at time of this entry; GPU renderer still requires mode implementation.
+
+
 > Каждый следующий патч обязан обновлять этот файл и публиковаться коммитом в GitHub. См. [AGENTS.md](../AGENTS.md) и [DEVELOPMENT_WORKFLOW.md](DEVELOPMENT_WORKFLOW.md).
 
 ## [1.7.1 / Patch 2] — Preview packaging and regression hardening (2026-10-23)

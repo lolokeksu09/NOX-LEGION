@@ -672,6 +672,15 @@ void main() {
     // Preserve rich local contrast without washing black pixels to charcoal.
     sum+=premiumDetail*qualityMix;
     sum*=1.0+qualityMix*0.22;
+    // VIVID 1.9.3: compressed local spectral exposure, never a full-screen tint.
+    // More readable neon midtones, softer bright peaks, stronger saturated cores.
+    // The mask leaves low-energy haze and exact AMOLED black untouched.
+    float luminousSignal=max(sum.r,max(sum.g,sum.b));
+    float luminousMask=smoothstep(0.022,0.11,luminousSignal);
+    vec3 spectralGrade=(sum*2.6)/(vec3(1.0)+sum*1.8);
+    float spectralLuma=dot(spectralGrade,vec3(0.2126,0.7152,0.0722));
+    spectralGrade=max(vec3(0.0),mix(vec3(spectralLuma),spectralGrade,1.23));
+    sum=mix(sum,spectralGrade,luminousMask);
   }
   // Preserve the deep-black backdrop instead of adding synthetic gray noise.
   gl_FragColor=vec4(min(sum,vec3(1.0)),1.0);

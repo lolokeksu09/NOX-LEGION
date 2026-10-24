@@ -1,3 +1,18 @@
+# NOX 1.9.3 — Vivid Light
+
+**Visual correction:** The nine procedural AMOLED live wallpapers have a stronger, more saturated **local glow and highlight contrast** in Rich and Ultra. The same scene geometry, motion and presets remain in place; this release fixes subdued light intensity instead of stacking more dim shader layers.
+
+The renderer's bounded per-channel tone curve raises visible neon midtones and compresses bright peaks, while a per-pixel signal mask keeps barely lit regions dark and preserves exact #000000 black. The correction is fully shader-local: no new off-screen textures, bloom passes, network, root, permissions, Room migration or format changes. **Balanced remains the lean original renderer; Android battery saver and thermal protection can still switch to Balanced automatically.**
+
+- All nine scenes benefit: **FLUX, HALO, NEBULA, AURORA, PULSE, COMET, VEIL, GRID, SHARDS**.
+- Independent preview: version **1.9.3**, code **16**, debug ID `studio.nox.light.vivid`, launcher label **NOX 1.9.3 Vivid**.
+- The new debug app installs beside 1.9.2 and does not automatically share private presets. Do not uninstall the earlier working version.
+- GLSL compilation and Android CI are separate from actual device GPU, brightness, composition, 60/120 FPS and thermal testing. **No on-device visual result is claimed.**
+
+[Review PR #14](https://github.com/lolokeksu09/NOX-LEGION/pull/14) · [Changelog](docs/CHANGELOG.md) · [QA](docs/QA_STATUS.md) · [AGENTS](AGENTS.md)
+
+---
+
 # NOX 1.9.2 — Volumetric Light
 
 **Volumetric composition update for all nine offline AMOLED wallpapers.** This patch adds shaped, directionally lit surfaces in Rich and Ultra instead of increasing brightness uniformly:

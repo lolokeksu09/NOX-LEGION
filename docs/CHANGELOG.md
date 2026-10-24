@@ -1,5 +1,17 @@
 # NOX — журнал изменений
 
+## [1.9.3 / Vivid Light] — black-safe luminous contrast (2026-10-24)
+
+**Branch:** `feature/nox-1-9-3-vivid-light`, based on NOX 1.9.2 Volumetric Light; pending review in a separate PR. No automatic merge into `main`.
+
+- **Observed issue:** User reports the nine live wallpapers still look washed out/dim despite added depth. Code review shows small scene radiance coefficients and only `sum*=1.0+qualityMix*0.22` before hard `min(sum,vec3(1.0))` clipping. This cannot increase localized weak highlights enough and loses contrast in hotter peaks. This is a source-level hypothesis, not a measured device colorimetry finding.
+- **Patch 1, red test:** `d260b8bf` adds numeric spectral-grade expectations (black input stays exactly black; a 0.12 neutral highlight rises above 0.22; a 0.8 highlight stays below clipping) and isolated 1.9.3 preview packaging contracts. Validation must fail against the unchanged 1.9.2 production code.
+- **Targeted remedy:** a quality-gated, masked, bounded spectral tone curve on existing scene light, saturation recovery, no blanket black lift, no additional geometry loops or textures. Balanced and energy/thermal fallbacks remain unchanged, as do all nine IDs and existing `.nox` presets.
+- **Verified RED evidence:** [CI #40086128072](https://github.com/lolokeksu09/NOX-LEGION/actions/runs/40086128072) failed only the two intended new Vivid contrast and 1.9.3 packaging tests; 33 existing structural contracts remained green.
+- **Patch 2 — shader:** `590f7521` adds black-safe Vivid spectral grading after existing quality-gated radiance. The bounded rational curve `(sum*2.6)/(1+sum*1.8)`, chroma lift and `smoothstep(0.022,0.11,...)` mask visibly target midtones without a blanket gray overlay. Balanced stays unchanged, no new scene or data schema.
+- **Patch 3 — standalone packaging:** Android 1.9.3/code16, separate preview `studio.nox.light.vivid`, launcher `NOX 1.9.3 Vivid`, CI artifact `NOX-1.9.3-vivid-APK`. README and QA ledger updated.
+- **CI/result:** [Run #40086316092](https://github.com/lolokeksu09/NOX-LEGION/actions/runs/40086316092) passed all structural, GLSL, Kotlin and Android build steps plus artifact upload for commit `bbca1f4a`. Verified artifact ID `12557521130`, ZIP CRC and APK CRC; APK SHA-256 `c4d3156b7c061897ab022a1bff5178e1da9e8f911ad1cbc0f730b563b3b15a2b` (19,494,687 bytes). **Device visual improvement, power/FPS and thermals still require Lenovo Legion Y70 testing.**
+
 ## [1.9.2 / Volumetric Light] — deeper shaped materials (2026-10-24)
 
 **Base:** 1.9.1 Cinematic Depth `3e5f592`; separate branch `feature/nox-1-9-2-volumetric-light`, not merged to `main`.
